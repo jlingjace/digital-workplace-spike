@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -84,7 +84,7 @@ const inputClass =
 const selectClass =
   "w-full text-sm border border-gray-200 rounded-btn px-3 py-2 bg-white focus:outline-none focus:border-[#ff6b2b] focus:ring-2 focus:ring-[#ff6b2b]/20 transition-colors";
 
-// ─── Tag input (comma-separated list) ────────────────────────────────────────
+// ─── Tags input — controlled mode to prevent data loss on direct submit ───────
 
 function TagsInput({
   value,
@@ -95,19 +95,20 @@ function TagsInput({
   onChange: (v: string[]) => void;
   placeholder?: string;
 }) {
-  const raw = value.join(", ");
+  const [raw, setRaw] = useState(value.join(", "));
+
+  const commit = (text: string) => {
+    const tags = text.split(",").map((s) => s.trim()).filter(Boolean);
+    onChange(tags);
+  };
+
   return (
     <input
       className={inputClass}
-      defaultValue={raw}
+      value={raw}
       placeholder={placeholder ?? "用逗号分隔，如: A, B, C"}
-      onBlur={(e) => {
-        const tags = e.target.value
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean);
-        onChange(tags);
-      }}
+      onChange={(e) => setRaw(e.target.value)}
+      onBlur={(e) => commit(e.target.value)}
     />
   );
 }
@@ -124,6 +125,16 @@ function ConfigForm({
   onClose: () => void;
 }) {
   const schema = schemas[block.type];
+
+  // Guard: unknown block type
+  if (!schema) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-5">
+        <p className="text-sm text-gray-400">不支持的区块类型：{block.type}</p>
+      </div>
+    );
+  }
+
   const {
     register,
     handleSubmit,
@@ -149,6 +160,9 @@ function ConfigForm({
     onSave(data as unknown as Block["config"]);
   };
 
+  const focusRingPrimary = "focus:outline-none focus:ring-2 focus:ring-[#ff6b2b] focus:ring-offset-1";
+  const focusRingGray = "focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-1";
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto p-5 space-y-4">
@@ -157,13 +171,7 @@ function ConfigForm({
           <>
             <div>
               <FieldLabel label="显示数量 (1-20)" error={(errors as Record<string, {message?: string}>).count?.message} />
-              <input
-                type="number"
-                min={1}
-                max={20}
-                className={inputClass}
-                {...register("count", { valueAsNumber: true })}
-              />
+              <input type="number" min={1} max={20} className={inputClass} {...register("count", { valueAsNumber: true })} />
             </div>
             <div>
               <FieldLabel label="受众范围" />
@@ -184,20 +192,11 @@ function ConfigForm({
           <>
             <div>
               <FieldLabel label="显示数量 (2-12)" error={(errors as Record<string, {message?: string}>).count?.message} />
-              <input
-                type="number"
-                min={2}
-                max={12}
-                className={inputClass}
-                {...register("count", { valueAsNumber: true })}
-              />
+              <input type="number" min={2} max={12} className={inputClass} {...register("count", { valueAsNumber: true })} />
             </div>
             <div>
               <FieldLabel label="系统分类（逗号分隔）" error={(errors as Record<string, {message?: string}>).systemCategories?.message} />
-              <TagsInput
-                value={(watch("systemCategories") as string[]) ?? []}
-                onChange={(v) => setValue("systemCategories", v)}
-              />
+              <TagsInput value={(watch("systemCategories") as string[]) ?? []} onChange={(v) => setValue("systemCategories", v)} />
             </div>
           </>
         )}
@@ -227,13 +226,7 @@ function ConfigForm({
             </div>
             <div>
               <FieldLabel label="预读天数 (1-365)" error={(errors as Record<string, {message?: string}>).daysAhead?.message} />
-              <input
-                type="number"
-                min={1}
-                max={365}
-                className={inputClass}
-                {...register("daysAhead", { valueAsNumber: true })}
-              />
+              <input type="number" min={1} max={365} className={inputClass} {...register("daysAhead", { valueAsNumber: true })} />
             </div>
           </>
         )}
@@ -252,13 +245,7 @@ function ConfigForm({
             </div>
             <div>
               <FieldLabel label="显示数量 (1-20)" error={(errors as Record<string, {message?: string}>).count?.message} />
-              <input
-                type="number"
-                min={1}
-                max={20}
-                className={inputClass}
-                {...register("count", { valueAsNumber: true })}
-              />
+              <input type="number" min={1} max={20} className={inputClass} {...register("count", { valueAsNumber: true })} />
             </div>
           </>
         )}
@@ -267,11 +254,7 @@ function ConfigForm({
         {block.type === "team_directory" && (
           <div>
             <FieldLabel label="部门范围" error={(errors as Record<string, {message?: string}>).deptScope?.message} />
-            <input
-              className={inputClass}
-              placeholder="all 或部门名称"
-              {...register("deptScope")}
-            />
+            <input className={inputClass} placeholder="all 或部门名称" {...register("deptScope")} />
           </div>
         )}
 
@@ -310,12 +293,7 @@ function ConfigForm({
         {block.type === "infrastructure_health" && (
           <div>
             <FieldLabel label="状态 Endpoint URL" error={(errors as Record<string, {message?: string}>).endpointUrl?.message} />
-            <input
-              type="url"
-              className={inputClass}
-              placeholder="https://status.example.com/api"
-              {...register("endpointUrl")}
-            />
+            <input type="url" className={inputClass} placeholder="https://status.example.com/api" {...register("endpointUrl")} />
           </div>
         )}
 
@@ -332,13 +310,7 @@ function ConfigForm({
             </div>
             <div>
               <FieldLabel label="显示项目数 (1-20)" error={(errors as Record<string, {message?: string}>).count?.message} />
-              <input
-                type="number"
-                min={1}
-                max={20}
-                className={inputClass}
-                {...register("count", { valueAsNumber: true })}
-              />
+              <input type="number" min={1} max={20} className={inputClass} {...register("count", { valueAsNumber: true })} />
             </div>
           </>
         )}
@@ -361,34 +333,18 @@ function ConfigForm({
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-medium text-gray-700">统计数据</span>
-                <button
-                  type="button"
-                  onClick={() => appendStat({ label: "", value: "" })}
-                  className="text-xs text-[#ff6b2b] hover:text-[#e55a1c] font-medium focus:outline-none"
-                >
+                <button type="button" onClick={() => appendStat({ label: "", value: "" })}
+                  className={`text-xs text-[#ff6b2b] hover:text-[#e55a1c] font-medium ${focusRingPrimary}`}>
                   + 添加
                 </button>
               </div>
               {statsFields.map((field, idx) => (
                 <div key={field.id} className="flex gap-2 mb-2 items-start">
-                  <input
-                    className={`${inputClass} flex-1`}
-                    placeholder="标签（如：员工数）"
-                    {...register(`stats.${idx}.label`)}
-                  />
-                  <input
-                    className={`${inputClass} w-24`}
-                    placeholder="值"
-                    {...register(`stats.${idx}.value`)}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeStat(idx)}
-                    className="p-2 text-gray-400 hover:text-red-500 focus:outline-none flex-shrink-0"
-                    aria-label="Remove stat"
-                  >
-                    ✕
-                  </button>
+                  <input className={`${inputClass} flex-1`} placeholder="标签（如：员工数）" {...register(`stats.${idx}.label`)} />
+                  <input className={`${inputClass} w-24`} placeholder="值" {...register(`stats.${idx}.value`)} />
+                  <button type="button" onClick={() => removeStat(idx)}
+                    className={`p-2 text-gray-400 hover:text-red-500 flex-shrink-0 ${focusRingGray}`}
+                    aria-label="删除统计项">✕</button>
                 </div>
               ))}
             </div>
@@ -408,12 +364,7 @@ function ConfigForm({
             </div>
             <div>
               <FieldLabel label="内容" error={(errors as Record<string, {message?: string}>).content?.message} />
-              <textarea
-                rows={3}
-                className={inputClass}
-                placeholder="告警内容..."
-                {...register("content")}
-              />
+              <textarea rows={3} className={inputClass} placeholder="告警内容..." {...register("content")} />
             </div>
             <div>
               <FieldLabel label="CTA 按钮文字（可选）" />
@@ -431,48 +382,22 @@ function ConfigForm({
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-gray-700">链接列表</span>
-              <button
-                type="button"
-                onClick={() => appendLink({ label: "", url: "", icon: "" })}
-                className="text-xs text-[#ff6b2b] hover:text-[#e55a1c] font-medium focus:outline-none"
-              >
+              <button type="button" onClick={() => appendLink({ label: "", url: "", icon: "" })}
+                className={`text-xs text-[#ff6b2b] hover:text-[#e55a1c] font-medium ${focusRingPrimary}`}>
                 + 添加链接
               </button>
             </div>
-            {linksFields.length === 0 && (
-              <p className="text-xs text-gray-400 italic">暂无链接，点击上方添加</p>
-            )}
+            {linksFields.length === 0 && <p className="text-xs text-gray-400 italic">暂无链接，点击上方添加</p>}
             {linksFields.map((field, idx) => (
               <div key={field.id} className="border border-gray-100 rounded-btn p-3 mb-2 space-y-2">
                 <div className="flex gap-2">
-                  <input
-                    className={`${inputClass} flex-1`}
-                    placeholder="标签"
-                    {...register(`links.${idx}.label`)}
-                  />
-                  <input
-                    className={`${inputClass} w-16`}
-                    placeholder="图标"
-                    {...register(`links.${idx}.icon`)}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeLink(idx)}
-                    className="p-2 text-gray-400 hover:text-red-500 focus:outline-none"
-                    aria-label="Remove link"
-                  >
-                    ✕
-                  </button>
+                  <input className={`${inputClass} flex-1`} placeholder="标签" {...register(`links.${idx}.label`)} />
+                  <input className={`${inputClass} w-16`} placeholder="图标" {...register(`links.${idx}.icon`)} />
+                  <button type="button" onClick={() => removeLink(idx)}
+                    className={`p-2 text-gray-400 hover:text-red-500 ${focusRingGray}`}
+                    aria-label="删除链接">✕</button>
                 </div>
-                <input
-                  type="url"
-                  className={inputClass}
-                  placeholder="https://..."
-                  {...register(`links.${idx}.url`)}
-                />
-                {(errors as Record<string, { message?: string }>)[`links.${idx}.url`]?.message && (
-                  <p className="text-xs text-red-500">{(errors as Record<string, { message?: string }>)[`links.${idx}.url`]?.message}</p>
-                )}
+                <input type="url" className={inputClass} placeholder="https://..." {...register(`links.${idx}.url`)} />
               </div>
             ))}
           </div>
@@ -483,22 +408,11 @@ function ConfigForm({
           <>
             <div>
               <FieldLabel label="Embed URL" error={(errors as Record<string, {message?: string}>).embedUrl?.message} />
-              <input
-                type="url"
-                className={inputClass}
-                placeholder="https://..."
-                {...register("embedUrl")}
-              />
+              <input type="url" className={inputClass} placeholder="https://..." {...register("embedUrl")} />
             </div>
             <div>
               <FieldLabel label="高度 (px, 100-2000)" error={(errors as Record<string, {message?: string}>).height?.message} />
-              <input
-                type="number"
-                min={100}
-                max={2000}
-                className={inputClass}
-                {...register("height", { valueAsNumber: true })}
-              />
+              <input type="number" min={100} max={2000} className={inputClass} {...register("height", { valueAsNumber: true })} />
             </div>
           </>
         )}
@@ -509,13 +423,13 @@ function ConfigForm({
         <button
           type="button"
           onClick={onClose}
-          className="px-4 py-2 text-sm border border-gray-200 rounded-btn text-gray-600 hover:bg-gray-100 transition-colors focus:outline-none"
+          className={`px-4 py-2 text-sm border border-gray-200 rounded-btn text-gray-600 hover:bg-gray-100 transition-colors ${focusRingGray}`}
         >
           取消
         </button>
         <button
           type="submit"
-          className="px-5 py-2 text-sm bg-[#ff6b2b] text-white rounded-btn hover:bg-[#e55a1c] transition-colors focus:outline-none font-medium"
+          className={`px-5 py-2 text-sm bg-[#ff6b2b] text-white rounded-btn hover:bg-[#e55a1c] transition-colors ${focusRingPrimary} font-medium`}
         >
           保存配置
         </button>
@@ -533,9 +447,15 @@ interface BlockConfigDrawerProps {
 }
 
 export default function BlockConfigDrawer({ block, onSave, onClose }: BlockConfigDrawerProps) {
-  const meta = BLOCK_META[block.type];
+  const meta = BLOCK_META[block.type] ?? { icon: "🔲", label: block.type };
 
-  // Close on Escape
+  // Slide-in animation: start off-screen, transition to position on mount
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", handler);
@@ -545,20 +465,18 @@ export default function BlockConfigDrawer({ block, onSave, onClose }: BlockConfi
   return (
     <>
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 z-40 bg-black/20"
-        aria-hidden="true"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 z-40 bg-black/20" aria-hidden="true" onClick={onClose} />
 
-      {/* Drawer */}
+      {/* Drawer — slides in from right */}
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="drawer-title"
-        className="fixed top-0 right-0 h-full w-96 bg-white shadow-2xl z-50 flex flex-col"
+        className={`fixed top-0 right-0 h-full w-96 bg-white shadow-2xl z-50 flex flex-col
+          transition-transform duration-200 ease-out
+          ${visible ? "translate-x-0" : "translate-x-full"}`}
       >
-        {/* Drawer header */}
+        {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center gap-2">
             <span className="text-xl" aria-hidden="true">{meta.icon}</span>
@@ -570,7 +488,7 @@ export default function BlockConfigDrawer({ block, onSave, onClose }: BlockConfi
           <button
             onClick={onClose}
             aria-label="关闭配置面板"
-            className="p-1.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors focus:outline-none"
+            className="p-1.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-1"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18" />

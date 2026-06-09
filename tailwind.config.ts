@@ -31,8 +31,8 @@ const config: Config = {
         "info-bg": "#dbeafe",
       },
       fontFamily: {
-        sans: ["Hanken Grotesk", "Inter", "system-ui", "sans-serif"],
-        mono: ["JetBrains Mono", "Menlo", "monospace"],
+        sans: ["var(--font-sans)", "Hanken Grotesk", "Inter", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "JetBrains Mono", "Menlo", "monospace"],
       },
       borderRadius: {
         btn: "8px",

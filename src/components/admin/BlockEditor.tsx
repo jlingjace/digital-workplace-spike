@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import {
   DndContext,
   closestCenter,
@@ -47,7 +47,7 @@ function ConfigSummary({ block }: { block: Block }) {
   const parts: string[] = [];
 
   if ("count" in cfg && typeof cfg.count === "number") parts.push(`count: ${cfg.count}`);
-  if ("daysAhead" in cfg && typeof cfg.daysAhead === "number") parts.push(`${cfg.daysAhead} days`);
+  if ("daysAhead" in cfg && typeof cfg.daysAhead === "number") parts.push(`${cfg.daysAhead} 天`);
   if ("variant" in cfg && typeof cfg.variant === "string") parts.push(cfg.variant);
   if ("embedUrl" in cfg && typeof cfg.embedUrl === "string" && cfg.embedUrl) {
     const url = cfg.embedUrl as string;
@@ -57,8 +57,8 @@ function ConfigSummary({ block }: { block: Block }) {
     const url = cfg.endpointUrl as string;
     parts.push(url.length > 30 ? url.slice(0, 30) + "…" : url);
   }
-  if ("links" in cfg && Array.isArray(cfg.links)) parts.push(`${cfg.links.length} links`);
-  if ("stats" in cfg && Array.isArray(cfg.stats)) parts.push(`${cfg.stats.length} stats`);
+  if ("links" in cfg && Array.isArray(cfg.links)) parts.push(`${cfg.links.length} 个链接`);
+  if ("stats" in cfg && Array.isArray(cfg.stats)) parts.push(`${cfg.stats.length} 项统计`);
 
   if (parts.length === 0) return null;
   return <p className="text-xs text-gray-400 font-mono mt-0.5">{parts.join(" · ")}</p>;
@@ -95,8 +95,8 @@ function SortableBlockCard({ block, onToggleVisible, onOpenConfig, onDelete }: S
       <button
         {...attributes}
         {...listeners}
-        className="mt-1 text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing flex-shrink-0 focus:outline-none"
-        aria-label="Drag to reorder"
+        className="mt-1 text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-1 rounded"
+        aria-label="拖拽排序"
         tabIndex={0}
       >
         <DragHandleIcon />
@@ -113,7 +113,7 @@ function SortableBlockCard({ block, onToggleVisible, onOpenConfig, onDelete }: S
           <span className="font-medium text-gray-800 text-sm">{meta.label}</span>
           {!block.visible && (
             <span className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded font-mono leading-tight">
-              Hidden
+              隐藏
             </span>
           )}
         </div>
@@ -125,8 +125,8 @@ function SortableBlockCard({ block, onToggleVisible, onOpenConfig, onDelete }: S
         {/* Visibility toggle */}
         <button
           onClick={() => onToggleVisible(block.id)}
-          title={block.visible ? "Hide block" : "Show block"}
-          aria-label={block.visible ? "Hide block" : "Show block"}
+          title={block.visible ? "隐藏区块" : "显示区块"}
+          aria-label={block.visible ? "隐藏区块" : "显示区块"}
           aria-pressed={!block.visible}
           className="p-1.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-300"
         >
@@ -146,8 +146,8 @@ function SortableBlockCard({ block, onToggleVisible, onOpenConfig, onDelete }: S
         {/* Configure */}
         <button
           onClick={() => onOpenConfig(block.id)}
-          title="Configure block"
-          aria-label={`Configure ${meta.label}`}
+          title="配置区块"
+          aria-label={`配置 ${meta.label}`}
           className="p-1.5 rounded text-gray-400 hover:text-[#005e6f] hover:bg-[#e0f4f7] transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#005e6f]"
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -156,31 +156,31 @@ function SortableBlockCard({ block, onToggleVisible, onOpenConfig, onDelete }: S
           </svg>
         </button>
 
-        {/* Delete */}
+        {/* Delete — 2-step confirmation */}
         {confirmDelete ? (
           <div className="flex items-center gap-1 bg-red-50 border border-red-200 rounded px-2 py-1">
-            <span className="text-xs text-red-700 font-medium">Delete?</span>
+            <span className="text-xs text-red-700 font-medium">删除？</span>
             <button
               onClick={() => onDelete(block.id)}
-              className="text-xs text-red-700 font-semibold hover:text-red-900 focus:outline-none"
-              aria-label="Confirm delete"
+              className="text-xs text-red-700 font-semibold hover:text-red-900 focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-1 rounded"
+              aria-label="确认删除"
             >
-              Yes
+              确认
             </button>
             <span className="text-red-300 text-xs">·</span>
             <button
               onClick={() => setConfirmDelete(false)}
-              className="text-xs text-gray-500 hover:text-gray-700 focus:outline-none"
-              aria-label="Cancel delete"
+              className="text-xs text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-1 rounded"
+              aria-label="取消删除"
             >
-              No
+              取消
             </button>
           </div>
         ) : (
           <button
             onClick={() => setConfirmDelete(true)}
-            title="Delete block"
-            aria-label={`Delete ${meta.label}`}
+            title="删除区块"
+            aria-label={`删除 ${meta.label}`}
             className="p-1.5 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red-300"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -201,9 +201,7 @@ function SortableBlockCard({ block, onToggleVisible, onOpenConfig, onDelete }: S
 function BlockLibrary({ onAdd }: { onAdd: (type: BlockType) => void }) {
   return (
     <aside className="w-60 flex-shrink-0 bg-gray-50 border border-gray-200 rounded-card p-3 overflow-y-auto">
-      <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 px-1">
-        Block Library
-      </h2>
+      <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 px-1">区块库</h2>
       <div className="space-y-1">
         {(Object.keys(BLOCK_META) as BlockType[]).map((type) => {
           const meta = BLOCK_META[type];
@@ -216,10 +214,11 @@ function BlockLibrary({ onAdd }: { onAdd: (type: BlockType) => void }) {
               <span className="text-base flex-shrink-0">{meta.icon}</span>
               <div className="min-w-0 flex-1">
                 <div className="text-xs font-medium text-gray-700 leading-tight">{meta.label}</div>
+                {meta.description && (
+                  <div className="text-xs text-gray-400 leading-tight mt-0.5 truncate">{meta.description}</div>
+                )}
               </div>
-              <span className="text-[#ff6b2b] opacity-0 group-hover:opacity-100 text-sm font-bold flex-shrink-0">
-                +
-              </span>
+              <span className="text-[#ff6b2b] opacity-0 group-hover:opacity-100 text-sm font-bold flex-shrink-0">+</span>
             </button>
           );
         })}
@@ -234,19 +233,19 @@ function PreviewPanel({ pageId }: { pageId: string }) {
   const [refreshKey, setRefreshKey] = useState(0);
 
   return (
-    <aside className="w-72 flex-shrink-0 bg-gray-50 border border-gray-200 rounded-card p-3 flex flex-col">
+    <aside className="w-80 flex-shrink-0 bg-gray-50 border border-gray-200 rounded-card p-3 flex flex-col">
       <div className="flex items-center justify-between mb-2">
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Preview</h2>
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">预览</h2>
         <button
           onClick={() => setRefreshKey((k) => k + 1)}
-          className="text-xs text-gray-400 hover:text-[#005e6f] flex items-center gap-1 focus:outline-none"
-          aria-label="Refresh preview"
+          className="text-xs text-gray-400 hover:text-[#005e6f] flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-[#005e6f] focus:ring-offset-1 rounded"
+          aria-label="刷新预览"
         >
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <polyline points="23 4 23 10 17 10" />
             <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" />
           </svg>
-          Refresh
+          刷新
         </button>
       </div>
       <div className="flex-1 bg-white rounded border border-gray-200 overflow-hidden min-h-0">
@@ -255,11 +254,11 @@ function PreviewPanel({ pageId }: { pageId: string }) {
           src={`/preview/${pageId}?draft=1`}
           className="w-full h-full"
           style={{ minHeight: 480 }}
-          title="Draft preview"
+          title="草稿预览"
           sandbox="allow-scripts allow-same-origin"
         />
       </div>
-      <p className="text-xs text-gray-400 mt-1.5 text-center">Save draft to refresh preview</p>
+      <p className="text-xs text-gray-400 mt-1.5 text-center">保存草稿后刷新预览</p>
     </aside>
   );
 }
@@ -278,7 +277,7 @@ function Toast({ type, text }: { type: "success" | "error" | "warning"; text: st
     <div
       role="alert"
       aria-live="assertive"
-      className={`fixed bottom-5 right-5 z-50 px-4 py-3 rounded-btn shadow-lg text-sm font-medium flex items-center gap-2 border ${styles[type]}`}
+      className={`fixed bottom-5 left-1/2 -translate-x-1/2 z-[60] px-4 py-3 rounded-btn shadow-lg text-sm font-medium flex items-center gap-2 border ${styles[type]}`}
     >
       <span>{icons[type]}</span>
       {text}
@@ -312,16 +311,18 @@ export default function BlockEditor({ pageId, pageTitle, initialBlocks, initialV
   const [activeId, setActiveId] = useState<string | null>(null);
   const [configBlockId, setConfigBlockId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: "success" | "error" | "warning"; text: string } | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
+  // Fix P2: avoid stacking multiple setTimeout by clearing previous timer
   const showToast = useCallback((type: "success" | "error" | "warning", text: string) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setToast({ type, text });
-    const id = setTimeout(() => setToast(null), 4000);
-    return () => clearTimeout(id);
+    toastTimerRef.current = setTimeout(() => setToast(null), 4000);
   }, []);
 
   const handleDragStart = (e: DragStartEvent) => setActiveId(e.active.id as string);
@@ -401,7 +402,6 @@ export default function BlockEditor({ pageId, pageTitle, initialBlocks, initialV
 
       const pubRes = await fetch(`/api/admin/pages/${pageId}/layout/publish`, { method: "POST" });
       if (!pubRes.ok) throw new Error();
-
       setIsDirty(false);
       showToast("success", "已成功发布");
     } catch {
@@ -443,8 +443,9 @@ export default function BlockEditor({ pageId, pageTitle, initialBlocks, initialV
   const activeBlock = activeId ? blocks.find((b) => b.id === activeId) : null;
   const configBlock = configBlockId ? blocks.find((b) => b.id === configBlockId) : null;
 
+  // Fix P2: use flex-1 instead of hardcoded height calc
   return (
-    <div className="flex flex-col" style={{ height: "calc(100vh - 64px)" }}>
+    <div className="flex-1 flex flex-col min-h-0">
       {/* Toolbar */}
       <header className="flex items-center justify-between px-5 py-3 bg-white border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center gap-3">
@@ -460,14 +461,14 @@ export default function BlockEditor({ pageId, pageTitle, initialBlocks, initialV
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowVersionHistory(true)}
-            className="px-3 py-1.5 text-xs border border-gray-200 rounded-btn text-gray-600 hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
+            className="px-3 py-1.5 text-xs border border-gray-200 rounded-btn text-gray-600 hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
           >
             版本历史
           </button>
           <button
             onClick={saveDraft}
             disabled={saving}
-            className="px-3 py-1.5 text-xs border border-gray-200 rounded-btn text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
+            className="px-3 py-1.5 text-xs border border-gray-200 rounded-btn text-gray-600 hover:bg-gray-100 disabled:opacity-40 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
           >
             {saving ? "保存中…" : "保存草稿"}
           </button>
@@ -486,7 +487,7 @@ export default function BlockEditor({ pageId, pageTitle, initialBlocks, initialV
         <BlockLibrary onAdd={addBlock} />
 
         {/* Center: sortable list */}
-        <main className="flex-1 overflow-y-auto" aria-label="Page blocks">
+        <main className="flex-1 overflow-y-auto" aria-label="页面区块列表">
           {sortedBlocks.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200 rounded-card">
               <span className="text-4xl mb-3" aria-hidden="true">📦</span>
@@ -501,7 +502,7 @@ export default function BlockEditor({ pageId, pageTitle, initialBlocks, initialV
               onDragEnd={handleDragEnd}
             >
               <SortableContext items={sortedBlocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
-                <div className="space-y-2" role="list" aria-label="Draggable block list">
+                <div className="space-y-2" role="list" aria-label="可拖拽区块列表">
                   {sortedBlocks.map((block) => (
                     <div key={block.id} role="listitem">
                       <SortableBlockCard
@@ -554,13 +555,13 @@ export default function BlockEditor({ pageId, pageTitle, initialBlocks, initialV
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowPublishConfirm(false)}
-                className="px-4 py-2 text-sm border border-gray-200 rounded-btn text-gray-600 hover:bg-gray-50 transition-colors focus:outline-none"
+                className="px-4 py-2 text-sm border border-gray-200 rounded-btn text-gray-600 hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
               >
                 取消
               </button>
               <button
                 onClick={publish}
-                className="px-4 py-2 text-sm bg-[#ff6b2b] text-white rounded-btn hover:bg-[#e55a1c] transition-colors focus:outline-none"
+                className="px-4 py-2 text-sm bg-[#ff6b2b] text-white rounded-btn hover:bg-[#e55a1c] transition-colors focus:outline-none focus:ring-2 focus:ring-[#ff6b2b]"
               >
                 确认发布
               </button>

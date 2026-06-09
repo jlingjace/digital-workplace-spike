@@ -23,6 +23,12 @@ export default function VersionHistoryDialog({ pageId, onRollback, onClose }: Ve
   const [error, setError] = useState<string | null>(null);
   const [rollingBack, setRollingBack] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -44,6 +50,10 @@ export default function VersionHistoryDialog({ pageId, onRollback, onClose }: Ve
     setRollingBack(null);
   };
 
+  const focusRingGray = "focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-1";
+  const focusRingSecondary = "focus:outline-none focus:ring-2 focus:ring-[#005e6f] focus:ring-offset-1";
+  const focusRingAmber = "focus:outline-none focus:ring-2 focus:ring-amber-300 focus:ring-offset-1";
+
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/40" aria-hidden="true" onClick={onClose} />
@@ -53,14 +63,18 @@ export default function VersionHistoryDialog({ pageId, onRollback, onClose }: Ve
         aria-labelledby="vh-title"
         className="fixed inset-0 z-50 flex items-center justify-center p-4"
       >
-        <div className="bg-white rounded-card shadow-2xl w-full max-w-lg">
+        {/* Fade-in + scale-in animation */}
+        <div
+          className={`bg-white rounded-card shadow-2xl w-full max-w-lg transition-all duration-150 ease-out
+            ${visible ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
+        >
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
             <h2 id="vh-title" className="text-base font-semibold text-gray-800">版本历史</h2>
             <button
               onClick={onClose}
-              aria-label="关闭"
-              className="p-1.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors focus:outline-none"
+              aria-label="关闭版本历史"
+              className={`p-1.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors ${focusRingGray}`}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <line x1="18" y1="6" x2="6" y2="18" />
@@ -72,9 +86,7 @@ export default function VersionHistoryDialog({ pageId, onRollback, onClose }: Ve
           {/* Content */}
           <div className="px-5 py-4 max-h-96 overflow-y-auto">
             {loading && (
-              <div className="flex items-center justify-center py-8 text-gray-400 text-sm">
-                加载中…
-              </div>
+              <div className="flex items-center justify-center py-8 text-gray-400 text-sm">加载中…</div>
             )}
             {error && (
               <div className="text-center py-8 text-red-500 text-sm">{error}</div>
@@ -114,14 +126,14 @@ export default function VersionHistoryDialog({ pageId, onRollback, onClose }: Ve
                         <button
                           onClick={() => handleRollback(v.id)}
                           disabled={!!rollingBack}
-                          className="text-xs text-amber-700 font-semibold hover:text-amber-900 focus:outline-none"
+                          className={`text-xs text-amber-700 font-semibold hover:text-amber-900 rounded ${focusRingAmber}`}
                         >
                           确认
                         </button>
                         <span className="text-amber-300 text-xs">·</span>
                         <button
                           onClick={() => setConfirmId(null)}
-                          className="text-xs text-gray-500 hover:text-gray-700 focus:outline-none"
+                          className={`text-xs text-gray-500 hover:text-gray-700 rounded ${focusRingGray}`}
                         >
                           取消
                         </button>
@@ -130,7 +142,7 @@ export default function VersionHistoryDialog({ pageId, onRollback, onClose }: Ve
                       <button
                         onClick={() => setConfirmId(v.id)}
                         disabled={!!rollingBack}
-                        className="text-xs px-3 py-1.5 border border-gray-200 rounded-btn text-gray-600 hover:border-[#005e6f] hover:text-[#005e6f] hover:bg-[#e0f4f7] transition-colors focus:outline-none disabled:opacity-40"
+                        className={`text-xs px-3 py-1.5 border border-gray-200 rounded-btn text-gray-600 hover:border-[#005e6f] hover:text-[#005e6f] hover:bg-[#e0f4f7] transition-colors ${focusRingSecondary} disabled:opacity-40`}
                       >
                         {rollingBack === v.id ? "回滚中…" : "回滚到此版本"}
                       </button>
@@ -142,9 +154,7 @@ export default function VersionHistoryDialog({ pageId, onRollback, onClose }: Ve
           </div>
 
           <div className="px-5 py-4 border-t border-gray-100 bg-gray-50 rounded-b-card">
-            <p className="text-xs text-gray-400">
-              最多保留 5 个历史版本。回滚将创建新草稿，不会自动发布。
-            </p>
+            <p className="text-xs text-gray-400">最多保留 5 个历史版本。回滚将创建新草稿，不会自动发布。</p>
           </div>
         </div>
       </div>

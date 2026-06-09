@@ -35,7 +35,6 @@ export async function saveDraft(
   const existing = await getCurrentDraft(pageId);
 
   if (existing) {
-    // Optimistic locking: if versionId provided it must match the current draft id
     if (versionId && versionId !== existing.id) {
       const err = new Error("Version conflict — the page was modified elsewhere.");
       (err as Error & { code: string }).code = "CONFLICT";
@@ -68,56 +67,61 @@ export async function publishLayout(pageId: string, userId?: string) {
   const draft = await getCurrentDraft(pageId);
   if (!draft) throw new Error("No draft to publish");
 
-  await prisma.pageLayout.updateMany({
-    where: { pageId, status: "PUBLISHED" },
-    data: { status: "ARCHIVED" },
-  });
-
-  const published = await prisma.pageLayout.update({
-    where: { id: draft.id },
-    data: {
-      status: "PUBLISHED",
-      publishedAt: new Date(),
-      createdById: userId,
-    },
-  });
-
-  // Keep only MAX_VERSIONS archived versions, delete the rest
-  const archived = await prisma.pageLayout.findMany({
-    where: { pageId, status: "ARCHIVED" },
-    orderBy: { version: "desc" },
-    skip: MAX_VERSIONS,
-  });
-  if (archived.length > 0) {
-    await prisma.pageLayout.deleteMany({
-      where: { id: { in: archived.map((l) => l.id) } },
+  // Wrap archive + publish + prune in a transaction to prevent partial state
+  return prisma.$transaction(async (tx) => {
+    await tx.pageLayout.updateMany({
+      where: { pageId, status: "PUBLISHED" },
+      data: { status: "ARCHIVED" },
     });
-  }
 
-  return published;
+    const published = await tx.pageLayout.update({
+      where: { id: draft.id },
+      data: {
+        status: "PUBLISHED",
+        publishedAt: new Date(),
+        createdById: userId,
+      },
+    });
+
+    // Prune: keep only MAX_VERSIONS archived versions
+    const excess = await tx.pageLayout.findMany({
+      where: { pageId, status: "ARCHIVED" },
+      orderBy: { version: "desc" },
+      skip: MAX_VERSIONS,
+      select: { id: true },
+    });
+    if (excess.length > 0) {
+      await tx.pageLayout.deleteMany({ where: { id: { in: excess.map((l) => l.id) } } });
+    }
+
+    return published;
+  });
 }
 
 export async function rollbackLayout(pageId: string, versionId: string, userId?: string) {
   const target = await prisma.pageLayout.findUnique({ where: { id: versionId } });
   if (!target || target.pageId !== pageId) throw new Error("Version not found");
 
-  // Delete any existing draft
-  await prisma.pageLayout.deleteMany({ where: { pageId, status: "DRAFT" } });
+  // Atomic: delete existing draft and create new one in a single transaction
+  return prisma.$transaction(async (tx) => {
+    await tx.pageLayout.deleteMany({ where: { pageId, status: "DRAFT" } });
 
-  const latest = await prisma.pageLayout.findFirst({
-    where: { pageId },
-    orderBy: { version: "desc" },
-  });
-  const nextVersion = (latest?.version ?? 0) + 1;
+    const latest = await tx.pageLayout.findFirst({
+      where: { pageId },
+      orderBy: { version: "desc" },
+      select: { version: true },
+    });
+    const nextVersion = (latest?.version ?? 0) + 1;
 
-  return prisma.pageLayout.create({
-    data: {
-      pageId,
-      version: nextVersion,
-      blocks: target.blocks ?? [],
-      status: "DRAFT",
-      createdById: userId,
-    },
+    return tx.pageLayout.create({
+      data: {
+        pageId,
+        version: nextVersion,
+        blocks: target.blocks ?? [],
+        status: "DRAFT",
+        createdById: userId,
+      },
+    });
   });
 }
 
