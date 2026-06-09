@@ -7,7 +7,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// NextAuth required tables
+// =====================
+// NextAuth tables
+// =====================
+
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -35,21 +38,6 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  role          UserRole  @default(VIEWER)
-  accounts      Account[]
-  sessions      Session[]
-  pageLayouts   PageLayout[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
 model VerificationToken {
   identifier String
   token      String   @unique
@@ -58,19 +46,148 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-enum UserRole {
-  ADMIN
-  EDITOR
-  VIEWER
+// =====================
+// Enums
+// =====================
+
+enum Role {
+  EMPLOYEE
+  PUBLISHER
+  DEPT_ADMIN
+  SYSTEM_OWNER
+  PLATFORM_ADMIN
 }
 
+enum AnnouncementStatus {
+  DRAFT
+  PENDING_APPROVAL
+  PUBLISHED
+  ARCHIVED
+  EXPIRED
+}
+
+enum AudienceScope {
+  ALL
+  DEPARTMENT
+  GROUP
+}
+
+enum PageLayoutStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+// =====================
+// Core models
+// =====================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String?   @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?
+  googleId      String?   @unique
+  role          Role      @default(EMPLOYEE)
+  deptId        String?
+
+  // Relations
+  dept                 Department?        @relation("UserDept", fields: [deptId], references: [id])
+  adminOfDepts         Department[]       @relation("DeptAdmins")
+  accounts             Account[]
+  sessions             Session[]
+  pageLayouts          PageLayout[]
+  createdAnnouncements Announcement[]     @relation("AnnouncementCreatedBy")
+  readReceipts         AnnouncementRead[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Department {
+  id            String  @id @default(cuid())
+  name          String
+  slug          String  @unique
+  googleGroupId String?
+
+  // Relations
+  members       User[]         @relation("UserDept")
+  admins        User[]         @relation("DeptAdmins")
+  announcements Announcement[]
+
+  createdAt DateTime @default(now())
+}
+
+// =====================
+// Announcement system
+// =====================
+
+model Announcement {
+  id            String             @id @default(cuid())
+  title         String
+  content       String
+  departmentId  String?
+  audienceScope AudienceScope      @default(ALL)
+  status        AnnouncementStatus @default(DRAFT)
+  isMandatory   Boolean            @default(false)
+  publishedAt   DateTime?
+  expiresAt     DateTime?
+  createdById   String
+
+  // Relations
+  department   Department?        @relation(fields: [departmentId], references: [id])
+  createdBy    User               @relation("AnnouncementCreatedBy", fields: [createdById], references: [id])
+  readReceipts AnnouncementRead[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AnnouncementRead {
+  id             String   @id @default(cuid())
+  announcementId String
+  userId         String
+  readAt         DateTime @default(now())
+
+  announcement Announcement @relation(fields: [announcementId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@unique([announcementId, userId])
+}
+
+// =====================
+// System catalog
+// =====================
+
+model SystemEntry {
+  id            String  @id @default(cuid())
+  name          String
+  description   String?
+  url           String
+  iconUrl       String?
+  category      String
+  status        String  @default("active")
+  ownerName     String
+  ownerEmail    String?
+  ownerSlack    String?
+  isQuickAccess Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// =====================
 // Block Editor tables
+// =====================
+
 model PortalPage {
-  id        String     @id @default(cuid())
-  slug      String     @unique
-  pageType  String     @default("home") @map("page_type")
-  title     String
-  layouts   PageLayout[]
+  id       String @id @default(cuid())
+  slug     String @unique
+  pageType String @default("home") @map("page_type")
+  title    String
+
+  layouts PageLayout[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -79,16 +196,16 @@ model PortalPage {
 }
 
 model PageLayout {
-  id          String            @id @default(cuid())
-  pageId      String            @map("page_id")
+  id          String           @id @default(cuid())
+  pageId      String           @map("page_id")
   version     Int
-  blocks      Json              // JSONB in PostgreSQL
-  status      PageLayoutStatus  @default(DRAFT)
-  publishedAt DateTime?         @map("published_at")
-  createdById String?           @map("created_by")
+  blocks      Json
+  status      PageLayoutStatus @default(DRAFT)
+  publishedAt DateTime?        @map("published_at")
+  createdById String?          @map("created_by")
 
-  page        PortalPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
-  createdBy   User?      @relation(fields: [createdById], references: [id])
+  page      PortalPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  createdBy User?      @relation(fields: [createdById], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -96,10 +213,4 @@ model PageLayout {
   @@unique([pageId, version])
   @@index([pageId, status])
   @@map("page_layouts")
-}
-
-enum PageLayoutStatus {
-  DRAFT
-  PUBLISHED
-  ARCHIVED
 }

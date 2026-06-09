@@ -1,29 +1,74 @@
 import { NextAuthOptions } from "next-auth";
-import EmailProvider from "next-auth/providers/email";
+import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import type { Adapter } from "next-auth/adapters";
+import type { AppRole } from "@/lib/auth/permissions";
+
+const ALLOWED_EMAIL_DOMAIN = process.env.ALLOWED_EMAIL_DOMAIN || "yourcompany.com";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as Adapter,
+  session: {
+    strategy: "jwt",
+  },
   providers: [
-    // Placeholder: Email magic link for Spike. Google OAuth comes in BE-1.
-    EmailProvider({
-      server: process.env.EMAIL_SERVER || "smtp://localhost:1025",
-      from: process.env.EMAIL_FROM || "noreply@digital-workplace.local",
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      // Safe because we enforce domain validation in signIn callback below.
+      allowDangerousEmailAccountLinking: true,
+      authorization: {
+        params: {
+          prompt: "select_account",
+          access_type: "offline",
+          response_type: "code",
+        },
+      },
     }),
   ],
   callbacks: {
-    async session({ session, user }) {
-      if (session.user && user) {
-        (session.user as typeof session.user & { id: string; role: string }).id = user.id;
-        (session.user as typeof session.user & { id: string; role: string }).role =
-          (user as typeof user & { role: string }).role ?? "VIEWER";
+    async signIn({ account, profile }) {
+      if (account?.provider !== "google") return false;
+
+      const email = profile?.email;
+      if (!email) return false;
+
+      // Reject non-company-domain accounts
+      if (!email.endsWith(`@${ALLOWED_EMAIL_DOMAIN}`)) {
+        return `/auth/error?error=AccessDenied&hint=domain`;
+      }
+
+      return true;
+    },
+
+    async jwt({ token, user }) {
+      // user is only defined on the initial sign-in; fetch role/dept from DB
+      if (user?.id) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { id: true, role: true, deptId: true },
+        });
+        if (dbUser) {
+          token.userId = dbUser.id;
+          token.role = dbUser.role as AppRole;
+          token.deptId = dbUser.deptId ?? null;
+        }
+      }
+      return token;
+    },
+
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.userId as string;
+        session.user.role = token.role as AppRole;
+        session.user.deptId = (token.deptId as string | null) ?? null;
       }
       return session;
     },
   },
   pages: {
-    signIn: "/auth/signin",
+    signIn: "/api/auth/signin",
+    error: "/auth/error",
   },
 };
