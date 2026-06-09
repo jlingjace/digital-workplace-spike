@@ -14,6 +14,7 @@ export default function ReadConfirmButton({ announcementId, initialConfirmed = f
   const [loading, setLoading] = useState(false);
 
   // Auto-mark as read on page load (silent, non-blocking)
+  // announcementId is stable for the lifetime of this component instance
   useEffect(() => {
     if (!confirmed) {
       fetch(`/api/portal/announcements/${announcementId}/read`, {
@@ -22,8 +23,7 @@ export default function ReadConfirmButton({ announcementId, initialConfirmed = f
         // Silently ignore network errors on auto-read
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [announcementId]); // intentionally runs once per mount; announcementId is stable
 
   const handleConfirm = async () => {
     if (confirmed || loading) return;

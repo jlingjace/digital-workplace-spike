@@ -17,6 +17,7 @@ const config: Config = {
         "surface-gray": "#f3f4f6",
         "primary-container": "#fff0e8",
         "border-subtle": "#e5e7eb",
+        error: "#ef4444",
         // Legacy vars
         background: "var(--background)",
         foreground: "var(--foreground)",

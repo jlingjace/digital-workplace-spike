@@ -128,11 +128,11 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
             aria-hidden="true"
           />
           {/* Panel */}
-          <aside className="absolute left-0 top-0 bottom-0 w-64 bg-[#f3f4f6] shadow-lg">
+          <aside className="absolute left-0 top-0 bottom-0 w-60 bg-surface-gray shadow-lg">
             <div className="flex justify-end p-3">
               <button
                 onClick={onClose}
-                className="p-1 rounded hover:bg-gray-200 transition-colors"
+                className="p-1 rounded hover:bg-gray-200 transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
                 aria-label="Close menu"
               >
                 <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">

@@ -129,14 +129,6 @@ function AnnouncementCard({
   item: Announcement;
   highlighted?: boolean;
 }) {
-  function formatDate(iso: string) {
-    return new Date(iso).toLocaleDateString("zh-CN", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    });
-  }
-
   return (
     <li>
       <Link
@@ -145,8 +137,8 @@ function AnnouncementCard({
           block rounded-xl border px-4 py-3.5 transition-colors group
           ${
             highlighted
-              ? "border-l-4 border-[#ff6b2b] bg-[#fff8f5] hover:bg-[#fff0e8]"
-              : "border-[#e5e7eb] bg-white hover:bg-[#f9fafb]"
+              ? "border-l-4 border-primary bg-primary-container hover:bg-[#ffe6d5]"
+              : "border-border-subtle bg-white hover:bg-surface-gray"
           }
         `}
       >
@@ -165,7 +157,7 @@ function AnnouncementCard({
                 </span>
               )}
             </div>
-            <h3 className="text-sm font-medium text-[#111827] group-hover:text-[#ff6b2b] transition-colors line-clamp-1">
+            <h3 className="text-sm font-medium text-on-surface group-hover:text-primary group-hover:underline transition-colors line-clamp-1">
               {item.title}
             </h3>
             <p className="text-xs text-gray-500 mt-1 line-clamp-2">{item.excerpt}</p>
@@ -175,7 +167,7 @@ function AnnouncementCard({
             <time className="text-xs text-gray-400" dateTime={item.publishedAt}>
               {formatDate(item.publishedAt)}
             </time>
-            <span className="text-xs text-[#005e6f] bg-[#e6f4f7] px-1.5 py-0.5 rounded font-medium">
+            <span className="text-xs text-secondary bg-[#e6f4f7] px-1.5 py-0.5 rounded font-medium">
               {item.department}
             </span>
           </div>

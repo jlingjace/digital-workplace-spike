@@ -49,7 +49,7 @@ export default async function AnnouncementsBlock({ config }: Props) {
                 <div className="flex items-center gap-2 flex-wrap">
                   <Badge variant="required">必读</Badge>
                   {!item.readAt && <Badge variant="new">NEW</Badge>}
-                  <span className="font-medium text-[#111827] text-sm group-hover:text-[#ff6b2b] transition-colors line-clamp-1">
+                  <span className="font-medium text-[#111827] text-sm group-hover:text-primary group-hover:underline transition-colors line-clamp-1">
                     {item.title}
                   </span>
                 </div>
@@ -75,7 +75,7 @@ export default async function AnnouncementsBlock({ config }: Props) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   {!item.readAt && <Badge variant="new">NEW</Badge>}
-                  <span className="font-medium text-[#111827] text-sm group-hover:text-[#ff6b2b] transition-colors line-clamp-1">
+                  <span className="font-medium text-[#111827] text-sm group-hover:text-primary group-hover:underline transition-colors line-clamp-1">
                     {item.title}
                   </span>
                 </div>

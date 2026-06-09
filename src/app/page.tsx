@@ -98,7 +98,7 @@ export default async function HomePage() {
         </div>
         <div className="bg-white rounded-xl border border-[#e5e7eb] px-4 py-3 flex flex-col gap-1 shadow-card">
           <span className="text-xs text-gray-500">必读未确认</span>
-          <span className="text-2xl font-bold text-red-500">2</span>
+          <span className="text-2xl font-bold text-error">2</span>
         </div>
       </div>
 

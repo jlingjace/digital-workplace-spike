@@ -52,7 +52,7 @@ export default async function AnnouncementDetailPage({ params }: Props) {
 
         {/* Must-read banner */}
         {announcement.isRequired && (
-          <div className="mb-5 flex items-start gap-3 bg-[#fff0e8] border border-[#ff6b2b]/30 rounded-xl px-4 py-3">
+          <div className="mb-5 flex flex-col sm:flex-row items-start gap-3 bg-[#fff0e8] border border-[#ff6b2b]/30 rounded-xl px-4 py-3">
             <svg
               className="w-5 h-5 text-[#ff6b2b] shrink-0 mt-0.5"
               fill="none"
@@ -169,7 +169,14 @@ export default async function AnnouncementDetailPage({ params }: Props) {
                   </p>
                 )}
                 {announcement.contactInfo.phone && (
-                  <p>{announcement.contactInfo.phone}</p>
+                  <p>
+                    <a
+                      href={`tel:${announcement.contactInfo.phone}`}
+                      className="text-[#005e6f] hover:underline"
+                    >
+                      {announcement.contactInfo.phone}
+                    </a>
+                  </p>
                 )}
               </address>
             </div>
@@ -180,7 +187,7 @@ export default async function AnnouncementDetailPage({ params }: Props) {
         <div className="mt-4">
           <Link
             href="/announcements"
-            className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-[#ff6b2b] transition-colors"
+            className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-[#d45320] hover:underline transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
