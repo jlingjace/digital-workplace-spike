@@ -3,9 +3,9 @@ import { withAuth } from "next-auth/middleware";
 export default withAuth({
   callbacks: {
     authorized({ req, token }) {
-      const isAdminPath = req.nextUrl.pathname.startsWith("/admin");
+      const path = req.nextUrl.pathname;
+      const isAdminPath = path.startsWith("/admin") || path.startsWith("/api/admin");
       if (isAdminPath) {
-        // Require authenticated session for all /admin/** routes
         return !!token;
       }
       return true;
@@ -14,5 +14,5 @@ export default withAuth({
 });
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/api/admin/:path*"],
 };
