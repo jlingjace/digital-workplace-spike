@@ -1,4 +1,9 @@
-export type BlockType = "announcements_feed" | "quick_access_grid";
+export type BlockType =
+  | "announcements_feed"
+  | "quick_access_grid"
+  | "action_items"
+  | "events_calendar"
+  | "news_culture";
 
 export interface AnnouncementsFeedConfig {
   title: string;
@@ -10,7 +15,25 @@ export interface QuickAccessGridConfig {
   items: Array<{ label: string; url: string; icon?: string }>;
 }
 
-export type BlockConfig = AnnouncementsFeedConfig | QuickAccessGridConfig;
+export interface ActionItemsConfig {
+  title: string;
+}
+
+export interface EventsCalendarConfig {
+  title: string;
+}
+
+export interface NewsCultureConfig {
+  title: string;
+  count?: number;
+}
+
+export type BlockConfig =
+  | AnnouncementsFeedConfig
+  | QuickAccessGridConfig
+  | ActionItemsConfig
+  | EventsCalendarConfig
+  | NewsCultureConfig;
 
 export interface Block {
   id: string;

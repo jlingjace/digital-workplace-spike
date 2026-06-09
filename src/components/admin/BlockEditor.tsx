@@ -129,6 +129,9 @@ interface BlockEditorProps {
 const BLOCK_DEFAULTS: Record<BlockType, () => Block["config"]> = {
   announcements_feed: () => ({ title: "Latest Announcements", count: 5 }),
   quick_access_grid: () => ({ title: "Quick Access", items: [] }),
+  action_items: () => ({ title: "待办事项" }),
+  events_calendar: () => ({ title: "即将到来的活动" }),
+  news_culture: () => ({ title: "企业新闻" }),
 };
 
 export default function BlockEditor({ pageId, initialBlocks }: BlockEditorProps) {
