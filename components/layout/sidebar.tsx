@@ -98,7 +98,7 @@ export function AdminSidebar() {
                               className={cn(
                                 'block px-3 py-1.5 rounded-btn text-sm transition-colors',
                                 pathname === child.href
-                                  ? 'text-primary font-medium'
+                                  ? 'bg-primary-50 text-primary-700 font-medium'
                                   : 'text-[#4b5563] hover:text-[#111827] hover:bg-[#e9ecef]'
                               )}
                             >

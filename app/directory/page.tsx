@@ -62,6 +62,7 @@ const QUICK_ACCESS_HIGHLIGHTS = [
 ]
 
 function SystemIcon({ sys }: { sys: SystemEntry }) {
+  const [imgError, setImgError] = useState(false)
   const initials = sys.name.slice(0, 2).toUpperCase()
   const colorClasses = [
     'bg-primary-container text-primary-on-container',
@@ -72,16 +73,13 @@ function SystemIcon({ sys }: { sys: SystemEntry }) {
   ]
   const colorIndex = sys.name.charCodeAt(0) % colorClasses.length
 
-  if (sys.iconUrl) {
+  if (sys.iconUrl && !imgError) {
     return (
       <img
         src={sys.iconUrl}
         alt={sys.name}
         className="w-10 h-10 rounded-lg object-contain p-1 bg-[#f1f3f5]"
-        onError={(e) => {
-          ;(e.target as HTMLImageElement).style.display = 'none'
-          ;(e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden')
-        }}
+        onError={() => setImgError(true)}
       />
     )
   }
@@ -274,7 +272,7 @@ export default function DirectoryPage() {
                       href={sys.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-1.5 text-[#9ca3af] hover:text-primary transition-colors"
+                      className="p-1.5 text-[#9ca3af] hover:text-primary-700 transition-colors"
                       title="Open"
                     >
                       <ExternalLink size={14} />
@@ -295,16 +293,16 @@ export default function DirectoryPage() {
             <span className="text-xs text-[#9ca3af]">{filteredSystems.length} tools</span>
           </div>
 
-          {/* Category filter tabs */}
-          <div className="flex flex-wrap gap-1 mb-6 border-b border-[#dee2e6] pb-0">
+          {/* Category filter tabs — horizontal scroll on mobile to prevent wrap */}
+          <div className="flex overflow-x-auto no-scrollbar -mx-6 px-6 border-b border-[#dee2e6] mb-6">
             {CATEGORY_TABS.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setCategoryFilter(cat)}
                 className={cn(
-                  'px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px',
+                  'shrink-0 px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap',
                   categoryFilter === cat
-                    ? 'border-primary text-primary'
+                    ? 'border-primary-700 text-primary-700'
                     : 'border-transparent text-[#4b5563] hover:text-[#111827]'
                 )}
               >
@@ -324,7 +322,7 @@ export default function DirectoryPage() {
               {filteredSystems.map((sys) => (
                 <div
                   key={sys.id}
-                  className="bg-white border border-[#dee2e6] rounded-card p-5 flex flex-col gap-4 hover:shadow-ambient transition-shadow"
+                  className="bg-white border border-[#dee2e6] rounded-card p-5 flex flex-col gap-4 hover:shadow-ambient transition-shadow focus-within:ring-2 focus-within:ring-primary-700/30"
                 >
                   {/* Header */}
                   <div className="flex items-start gap-3">
@@ -361,7 +359,7 @@ export default function DirectoryPage() {
                         href={`https://slack.com/app_redirect?channel=${sys.ownerSlack.replace('@', '')}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-0.5 text-primary hover:underline ml-1"
+                        className="inline-flex items-center gap-0.5 text-primary-700 hover:underline ml-1"
                       >
                         <MessageSquare size={10} />
                         {sys.ownerSlack}
@@ -376,7 +374,8 @@ export default function DirectoryPage() {
                       href={sys.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs font-medium text-[#4b5563] hover:text-primary transition-colors"
+                      aria-label={`Open ${sys.name}`}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-[#4b5563] hover:text-primary-700 transition-colors focus-visible:outline-none focus-visible:text-primary-700"
                     >
                       Open
                       <ExternalLink size={12} />

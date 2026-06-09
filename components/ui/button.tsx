@@ -11,15 +11,17 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   loading?: boolean
 }
 
+// P0: primary uses bg-primary-700 (#c73607, contrast ~5.28:1) instead of bg-primary (#ff6b2b, contrast ~2.84:1)
+// P1/P3: focus-visible instead of focus to avoid mouse-click halo; aria-busy for loading state
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    'bg-primary text-white hover:bg-primary-600 active:bg-primary-700 focus:shadow-focus disabled:bg-[#d1d5db] disabled:text-white',
+    'bg-primary-700 text-white hover:bg-primary-800 active:bg-primary-900 focus-visible:shadow-focus disabled:bg-[#d1d5db] disabled:text-white',
   secondary:
-    'bg-secondary text-white hover:bg-secondary-700 active:bg-secondary-800 focus:shadow-focus disabled:bg-[#d1d5db]',
+    'bg-secondary text-white hover:bg-secondary-700 active:bg-secondary-800 focus-visible:shadow-focus disabled:bg-[#d1d5db]',
   ghost:
-    'bg-transparent text-[#111827] hover:bg-[#f1f3f5] active:bg-[#e9ecef] border border-[#dee2e6] disabled:text-[#d1d5db]',
+    'bg-transparent text-[#111827] hover:bg-[#f1f3f5] active:bg-[#e9ecef] border border-[#dee2e6] focus-visible:shadow-focus disabled:text-[#d1d5db]',
   danger:
-    'bg-error text-white hover:bg-red-700 active:bg-red-800 focus:shadow-focus disabled:bg-[#d1d5db]',
+    'bg-error text-white hover:bg-red-700 active:bg-red-800 focus-visible:shadow-focus disabled:bg-[#d1d5db]',
 }
 
 const sizeClasses: Record<ButtonSize, string> = {
@@ -34,8 +36,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         disabled={disabled || loading}
+        aria-busy={loading}
         className={cn(
-          'inline-flex items-center justify-center gap-2 font-medium rounded-btn transition-colors focus:outline-none',
+          'inline-flex items-center justify-center gap-2 font-medium rounded-btn transition-colors focus-visible:outline-none',
           variantClasses[variant],
           sizeClasses[size],
           className
