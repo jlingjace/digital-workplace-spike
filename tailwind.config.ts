@@ -9,8 +9,34 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        primary: {
+          DEFAULT: "#ff6b2b",
+          container: "#fff0e8",
+          hover: "#e55a1c",
+        },
+        secondary: {
+          DEFAULT: "#005e6f",
+          container: "#e0f4f7",
+        },
+        tertiary: "#689ab5",
+        surface: {
+          DEFAULT: "#ffffff",
+          gray: "#f3f4f6",
+          subtle: "#e5e7eb",
+        },
+        "on-surface": "#111827",
+        "success-bg": "#dcfce7",
+        "warning-bg": "#fef3c7",
+        "error-bg": "#fee2e2",
+        "info-bg": "#dbeafe",
+      },
+      fontFamily: {
+        sans: ["var(--font-sans)", "Hanken Grotesk", "Inter", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "JetBrains Mono", "Menlo", "monospace"],
+      },
+      borderRadius: {
+        btn: "8px",
+        card: "16px",
       },
     },
   },
